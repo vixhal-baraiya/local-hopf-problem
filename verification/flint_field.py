@@ -15,6 +15,7 @@ so post-processing code is unchanged.
 Select it with the environment variable HOPF_BACKEND=flint.
 """
 
+import os
 from fractions import Fraction
 
 import flint
@@ -22,9 +23,9 @@ import sympy as sp
 from sympy import QQ
 from sympy.polys.fields import field as sympy_field
 
-NAMES = ("t", "r")
+NAMES = ("t", "r", "a") if os.environ.get("HOPF_BACKEND") == "flint-rotation" else ("t", "r")
 _ctx = flint.fmpq_mpoly_ctx.get(NAMES, "degrevlex")
-_SK, _st, _sr = sympy_field(",".join(NAMES), QQ)
+_SK, *_ = sympy_field(",".join(NAMES), QQ)
 
 
 def _scalar(x):
@@ -57,10 +58,10 @@ class FF:
 
     def __init__(self, n, d=None, normalize=True):
         if d is None:
-            d = _ctx.from_dict({(0, 0): 1})
+            d = _ctx.constant(1)
         if normalize:
             if n.is_zero():
-                d = _ctx.from_dict({(0, 0): 1})
+                d = _ctx.constant(1)
             else:
                 g = n.gcd(d)
                 if not g.is_one():
@@ -78,7 +79,7 @@ class FF:
             return x
         s = _scalar(x)
         if s is not None:
-            return FF(_ctx.from_dict({(0, 0): s}) if s else _ctx.from_dict({}), None, False)
+            return FF(_ctx.constant(s), None, False)
         if hasattr(x, "numer") and hasattr(x, "denom") and hasattr(x, "field"):
             return FF(_from_sympy_poly(x.numer), _from_sympy_poly(x.denom))
         if isinstance(x, sp.Basic):
@@ -182,7 +183,7 @@ class FF:
 class _Field:
     def __init__(self):
         self.zero = FF(_ctx.from_dict({}), None, False)
-        self.one = FF(_ctx.from_dict({(0, 0): 1}), None, False)
+        self.one = FF(_ctx.constant(1), None, False)
         self.gens = tuple(FF(g, None, False) for g in _ctx.gens())
 
     def __call__(self, x):
@@ -193,4 +194,4 @@ class _Field:
 
 
 K = _Field()
-cheeger, r = K.gens
+cheeger, r = K.gens[:2]

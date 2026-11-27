@@ -69,7 +69,13 @@ def tail_bound(j):
     """Bound for sum_{n>NTERMS} A k^n T_n^(j)(1)/n^2."""
     n = NTERMS + 1
     first = A_ * K_**n * q(markov(n, j)) / (n * n)
-    ratio = K_ * q(markov(n + 1, j) * n * n) / q(markov(n, j) * (n + 1) ** 2)
+    # For j=0 the successive ratios k*(n/(n+1))^2 increase to k.
+    ratio = K_
+    if j > 1:
+        # For j>=1 the n^2 factor cancels. Each remaining n^2-i^2
+        # has decreasing successive ratios, so the first ratio bounds the tail.
+        ratio *= q(markov(n + 1, j) * n * n / (markov(n, j) * (n + 1) ** 2))
+    assert ratio < 1
     return first / (1 - ratio)
 
 

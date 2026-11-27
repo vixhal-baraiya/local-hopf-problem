@@ -14,7 +14,7 @@ from itertools import combinations, product
 from sympy import QQ, factor, pi, simplify, sqrt, symbols
 from sympy.polys.fields import field
 
-if os.environ.get("HOPF_BACKEND") == "flint":
+if os.environ.get("HOPF_BACKEND") in ("flint", "flint-rotation"):
     # Same field Q(t,r) on FLINT polynomials; see flint_field.py.
     from flint_field import K, cheeger, r
 else:

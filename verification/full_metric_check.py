@@ -106,7 +106,7 @@ def tensors(Rm, lc, ld, mode):
     unit vectors). mode 'zero': h^(2)=0.
     """
     p, q, rot, flat, g, inv, _s = chart(C, S)
-    ex, ey, ez = [tuple(kq(Rm[row][col]) for row in range(3)) for col in range(3)]
+    ex, ey, ez = [tuple(K(Rm[row][col]) for row in range(3)) for col in range(3)]
     dot = sum(a * b for a, b in zip(p, q))
     du = dot - C
     plus = [a + b for a, b in zip(p, q)]
@@ -314,6 +314,22 @@ def first_independent(rows_of, frames, size):
     raise AssertionError("fit frames are degenerate")
 
 
+def export_components(coef_c, coef_dd):
+    """Keep the signed sine factor in the fitted in-plane vectors and matrices."""
+    names = ("A0", "A1", "B0", "B1", "M100", "M101", "M110", "M111",
+             "M200", "M201", "M211")
+    out = {}
+    for name, value in zip(names, [*coef_c, *coef_dd], strict=True):
+        out[name + "@r"] = str(value.as_expr())
+        try:
+            even = rational_in_cosine(value)
+        except AssertionError:
+            out[name + "@sin"] = str(sp.factor(rational_in_cosine(value / S)))
+        else:
+            out[name + "@u"] = str(sp.factor(even))
+    return out
+
+
 def part_a(pool, dump):
     rotations, quats = unisolvent_frames()
     tasks = [(Rm, lc, ld, "full") for Rm in rotations for lc, ld in LAMBDAS]
@@ -387,7 +403,7 @@ def part_a(pool, dump):
     if dump:
         import json
 
-        out = {}
+        out = export_components(coef_c, coef_dd)
         for k, v in exact.items():
             out[k + "@r"] = str(v.as_expr())  # always available, r = tan(delta/2)
             try:
@@ -395,9 +411,9 @@ def part_a(pool, dump):
             except AssertionError:
                 pass
         os.makedirs(os.path.dirname(dump), exist_ok=True)
-        with open(dump, "w") as fh:
+        with open(dump, "w", encoding="utf-8", newline="\n") as fh:
             json.dump(out, fh, indent=1, sort_keys=True)
-        print(f"  exact coefficient functions of (t,u) written to {os.path.relpath(dump)}", flush=True)
+        print(f"  exact coefficient functions of (t,u) written to {dump}", flush=True)
 
     # Uniform t -> 0 limits on the compactified circle.
     a0, a1, b0, b1 = (limit_r(x) for x in coef_c)
@@ -442,7 +458,27 @@ def part_a(pool, dump):
     print(f"  Unisolvent quaternions: {quats}", flush=True)
 
 
+def check_conformal_response():
+    """Linear response of the full 4D curvature to 2 h chi g on the equator."""
+    _, _, _, _, g, inv, _ = chart(C, S)
+    spatial = [unit(i) for i in range(4)]
+    h = 1 + 2*t
+    # Test a basis of all scalar two-jets, including arbitrary normal derivatives.
+    tests = [(one, 0), *((x, 0) for x in spatial)]
+    for i, x in enumerate(spatial):
+        for j in range(i, 4):
+            expected = -h if i == j == 0 else -one if i == j == 1 else 0
+            monomial = x*spatial[j] * (half if i == j else one)
+            tests.append((monomial, expected))
+    for chi, expected in tests:
+        metric = matrix(lambda i, j: g[i][j] + unit(4)*chi*g[i][j]*(2*h))
+        response = curvature(metric, inv)[0][0].get((0, 0, 0, 0, 1, 0), K.zero)
+        assert response == expected, ("conformal response", chi, response, expected)
+    print("  fixed-plane conformal response = -h chi_xx - chi_yy (all 15 spatial two-jets)", flush=True)
+
+
 def part_b(pool):
+    check_conformal_response()
     quarter = [
         ((1, 0, 0), (0, 1, 0), (0, 0, 1)),
         ((0, -1, 0), (1, 0, 0), (0, 0, 1)),

@@ -291,7 +291,7 @@ Fix $t\in(0,t_0]$ and apply Theorem 3.4 to $u(\pi,s)=R_{G_{t,s}}(e_1,e_2,e_1,e_2
 
 So there is $s_0(t)>0$ such that $G_{t,s}$ has positive sectional curvature for $0<s<s_0(t)$.
 
-Now choose $t_j\downarrow0$ in $(0,t_0]$, and for each $j$ choose $0<s_j<s_0(t_j)$ with $\|G_{t_j,s_j}-g_{t_j}\|_{C^j}<1/j$. This is possible because the tensors are smooth at each fixed $t_j$. Since $2g_{t_j}\to g_{\rm prod}$ in $C^\infty$, the metrics $2G_{t_j,s_j}$ have positive sectional curvature and converge to $g_{\rm prod}$ in $C^\infty$. $\blacksquare$
+Now choose $t_j\downarrow0$ in $(0,t_0]$, and for each $j$ choose $0<s_j<\min\{s_0(t_j),1/j\}$ with $\|G_{t_j,s_j}-g_{t_j}\|_{C^j}<1/j$. This is possible because the tensors are smooth at each fixed $t_j$. Since $2g_{t_j}\to g_{\rm prod}$ in $C^\infty$, the metrics $2G_{t_j,s_j}$ have positive sectional curvature and converge to $g_{\rm prod}$ in $C^\infty$. $\blacksquare$
 
 The threshold $s_0(t)$ comes from compactness and is not computed.
 
